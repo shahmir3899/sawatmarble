@@ -33,7 +33,7 @@ Chosen for speed of delivery: this is the same stack Mohsin already runs in prod
 | Frontend | React (Vite) |
 | Backend | Node.js / Express |
 | Database | PostgreSQL (Supabase-hosted) |
-| Auth | Clerk (role-based: Owner / Staff / Accountant) |
+| Auth | Supabase Auth. Roles (Owner / Staff / Accountant) live in a `profiles` table (one row per `auth.users` id, `role` column) and are enforced with Postgres RLS policies, not a separate auth provider's role field. |
 | Frontend hosting | Render Static Site (temporary free `*.onrender.com` URL until client provides a domain) |
 | Backend hosting | Render Web Service |
 | Database hosting | Supabase (free tier) |
@@ -108,7 +108,7 @@ Fields present on the existing paper form, which the digital Quotation/Challan/I
 
 This is not the final schema — it's the entity list and relationships the agent should scaffold from, to be refined into full DDL before any migrations are written.
 
-- `users` (Clerk-backed, role field: owner / staff / accountant)
+- `profiles` (id = FK to Supabase `auth.users.id`, name, phone, role: owner / staff / accountant) — role-based access enforced via Postgres RLS policies keyed off this table, not application-layer role checks alone
 - `customers` (name, address, phone, running `ledger_balance`)
 - `suppliers` (name, address, phone, running `ledger_balance`)
 - `inventory_items` (category, sub_category, description, size, default_rate_per_sqft, qty_on_hand, unit)
@@ -137,7 +137,7 @@ This is not the final schema — it's the entity list and relationships the agen
 
 ## 7. Build order (recommended)
 
-1. **Auth + roles** (Clerk) + base app shell with Sawat branding (logo, colors) in header/login.
+1. **Auth + roles** (Supabase Auth + `profiles` table + RLS policies) + base app shell with Sawat branding (logo, colors) in header/login.
 2. **Customers, Suppliers, Inventory** — the foundational tables everything else references.
 3. **Customer & Supplier ledgers** — get the Previous Balance/Total/Advance/Balance math right and tested before building documents on top of it.
 4. **Document flow**: Quotation → Delivery Challan → Receipt/Invoice, with PDF generation matching Section 3.2's layout exactly (this is what the client will compare against their paper book — get it visually close).
@@ -151,7 +151,20 @@ This is not the final schema — it's the entity list and relationships the agen
 
 1. **Invoice numbering:** continue from 1908, or start fresh? (Default assumption: continue from 1908.)
 2. **Quotation/Challan numbering scheme:** any existing convention, or assign one (e.g. `QT-0001`, `DC-0001`)?
-3. **Permission matrix specifics:** Can Staff create invoices but not edit ledger balances directly? Can Accountant record payments but not edit inventory? Needs a simple table before the roles are wired into Clerk.
+3. **Permission matrix specifics:** ~~Can Staff create invoices but not edit ledger balances directly? Can Accountant record payments but not edit inventory?~~ Resolved — see the confirmed matrix below. Needs a simple table before the roles are wired into Supabase Auth via the `profiles` table + RLS policies.
+
+   **Confirmed permission matrix:**
+
+   | Action | Owner | Staff | Accountant |
+   |---|---|---|---|
+   | Create/edit Quotations, Delivery Challans, Receipts/Invoices | ✅ | ✅ | ✅ |
+   | Edit ledger balances directly (outside of a proper transaction record) | ✅ | ❌ | ❌ |
+   | Record payments (customer & supplier) | ✅ | ❌ | ✅ |
+   | View/manage ledgers and aging reports | ✅ | view only | ✅ |
+   | Manage inventory (stock in/out) | ✅ | ✅ | ❌ |
+   | Manage customer/supplier contact records | ✅ | ✅ | view only |
+   | Edit footer terms/branding | ✅ | ❌ | ❌ |
+   | Void/status-transition records | ✅ | ❌ | ❌ |
 4. **PDF delivery:** is a downloadable/printable PDF sufficient for v1, or does the client want the WhatsApp message to carry a direct PDF attachment link (requires file hosting) vs. just a text summary?
 5. **Domain/hosting:** will this run under a subdomain of an existing property (e.g. `sawat.taiqmohsin.com` style) or a fresh domain for the client?
 6. **Historical data:** is there a backlog of paper invoices/ledger balances to migrate in, or does the app start clean with today's balances entered manually as opening balances?
