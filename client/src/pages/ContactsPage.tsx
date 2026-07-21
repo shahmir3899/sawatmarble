@@ -2,14 +2,18 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { Contact } from '../lib/types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { LedgerDialog } from '../components/LedgerDialog'
 
 type Props = {
   resource: 'customers' | 'suppliers'
   title: string
   canManage: boolean
+  canEditBalance: boolean
 }
 
-export function ContactsPage({ resource, title, canManage }: Props) {
+type EditableField = 'name' | 'phone' | 'address' | 'ledgerBalance'
+
+export function ContactsPage({ resource, title, canManage, canEditBalance }: Props) {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -18,6 +22,7 @@ export function ContactsPage({ resource, title, canManage }: Props) {
   const [newAddress, setNewAddress] = useState('')
   const [adding, setAdding] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Contact | null>(null)
+  const [ledgerParty, setLedgerParty] = useState<Contact | null>(null)
 
   async function load() {
     setLoading(true)
@@ -58,12 +63,17 @@ export function ContactsPage({ resource, title, canManage }: Props) {
     load()
   }
 
-  async function handleFieldSave(id: string, field: 'name' | 'phone' | 'address', value: string) {
-    await apiFetch(`/${resource}/${id}`, {
+  async function handleFieldSave(id: string, field: EditableField, value: string) {
+    setError(null)
+    const res = await apiFetch(`/${resource}/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [field]: value }),
+      body: JSON.stringify({ [field]: field === 'ledgerBalance' ? Number(value) : value }),
     })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? `Failed to save (HTTP ${res.status})`)
+    }
     load()
   }
 
@@ -74,7 +84,7 @@ export function ContactsPage({ resource, title, canManage }: Props) {
     const res = await apiFetch(`/${resource}/${id}`, { method: 'DELETE' })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      setError(body.error ?? `Failed to delete (HTTP ${res.status})`)
+      setError(body.error ?? `Failed to remove (HTTP ${res.status})`)
       return
     }
     load()
@@ -108,7 +118,7 @@ export function ContactsPage({ resource, title, canManage }: Props) {
               <th>Phone</th>
               <th>Address</th>
               <th>Balance</th>
-              {canManage && <th></th>}
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -117,8 +127,10 @@ export function ContactsPage({ resource, title, canManage }: Props) {
                 key={c.id}
                 contact={c}
                 canManage={canManage}
+                canEditBalance={canEditBalance}
                 onSave={handleFieldSave}
                 onDelete={() => setPendingDelete(c)}
+                onOpenLedger={() => setLedgerParty(c)}
               />
             ))}
           </tbody>
@@ -131,6 +143,14 @@ export function ContactsPage({ resource, title, canManage }: Props) {
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />
+
+      <LedgerDialog
+        open={ledgerParty !== null}
+        party={ledgerParty}
+        resource={resource}
+        onClose={() => setLedgerParty(null)}
+        onBalanceChanged={load}
+      />
     </div>
   )
 }
@@ -138,17 +158,22 @@ export function ContactsPage({ resource, title, canManage }: Props) {
 function ContactRow({
   contact,
   canManage,
+  canEditBalance,
   onSave,
   onDelete,
+  onOpenLedger,
 }: {
   contact: Contact
   canManage: boolean
-  onSave: (id: string, field: 'name' | 'phone' | 'address', value: string) => void
+  canEditBalance: boolean
+  onSave: (id: string, field: EditableField, value: string) => void
   onDelete: (id: string) => void
+  onOpenLedger: () => void
 }) {
   const [name, setName] = useState(contact.name)
   const [phone, setPhone] = useState(contact.phone ?? '')
   const [address, setAddress] = useState(contact.address ?? '')
+  const [balance, setBalance] = useState(contact.ledgerBalance)
 
   return (
     <tr>
@@ -176,14 +201,27 @@ function ContactRow({
           onBlur={() => address !== (contact.address ?? '') && onSave(contact.id, 'address', address)}
         />
       </td>
-      <td>{contact.ledgerBalance}</td>
-      {canManage && (
-        <td>
+      <td>
+        {canEditBalance ? (
+          <input
+            value={balance}
+            onChange={(e) => setBalance(e.target.value)}
+            onBlur={() => balance !== contact.ledgerBalance && onSave(contact.id, 'ledgerBalance', balance)}
+          />
+        ) : (
+          contact.ledgerBalance
+        )}
+      </td>
+      <td className="row-actions">
+        <button type="button" className="link-button" onClick={onOpenLedger}>
+          Ledger
+        </button>
+        {canManage && (
           <button type="button" className="link-button" onClick={() => onDelete(contact.id)}>
             Remove
           </button>
-        </td>
-      )}
+        )}
+      </td>
     </tr>
   )
 }

@@ -48,6 +48,7 @@ function App() {
   }, [session])
 
   const canManageContacts = profile?.role === 'owner' || profile?.role === 'staff'
+  const canEditBalance = profile?.role === 'owner'
   const canManageInventory = profile?.role === 'owner' || profile?.role === 'staff'
   const canDeleteInventory = profile?.role === 'owner'
 
@@ -86,9 +87,19 @@ function App() {
 
             {profile &&
               (tab === 'customers' ? (
-                <ContactsPage resource="customers" title="Customers" canManage={canManageContacts} />
+                <ContactsPage
+                  resource="customers"
+                  title="Customers"
+                  canManage={canManageContacts}
+                  canEditBalance={canEditBalance}
+                />
               ) : tab === 'suppliers' ? (
-                <ContactsPage resource="suppliers" title="Suppliers" canManage={canManageContacts} />
+                <ContactsPage
+                  resource="suppliers"
+                  title="Suppliers"
+                  canManage={canManageContacts}
+                  canEditBalance={canEditBalance}
+                />
               ) : (
                 <InventoryPage canManage={canManageInventory} canDelete={canDeleteInventory} />
               ))}

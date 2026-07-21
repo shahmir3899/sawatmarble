@@ -10,6 +10,17 @@ export type Contact = {
   updatedAt: string
 }
 
+export type Payment = {
+  id: string
+  customerId: string | null
+  supplierId: string | null
+  amount: string
+  method: string | null
+  note: string | null
+  paymentDate: string
+  createdAt: string
+}
+
 export type InventoryItem = {
   id: string
   category: string
