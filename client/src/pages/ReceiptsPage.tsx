@@ -138,6 +138,20 @@ export function ReceiptsPage() {
     return customers.find((c) => c.id === id)?.name ?? id
   }
 
+  // Auth here is a Bearer token, not a cookie session, so a plain <a href>
+  // can't carry it — fetch the PDF as a blob with the token attached, then
+  // open it from an object URL.
+  async function openPdf(receiptId: string) {
+    const res = await apiFetch(`/receipts/${receiptId}/pdf`)
+    if (!res.ok) {
+      setError(`Failed to load PDF (HTTP ${res.status})`)
+      return
+    }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+  }
+
   return (
     <div className="resource-page">
       <h2>Receipts / Invoices</h2>
@@ -268,7 +282,10 @@ export function ReceiptsPage() {
       {lastReceipt && (
         <p className="demo-result">
           Invoice #{lastReceipt.invoiceNo} created for {customerName(lastReceipt.customerId)} — new balance{' '}
-          {lastReceipt.balance}.
+          {lastReceipt.balance}.{' '}
+          <button type="button" className="link-button" onClick={() => openPdf(lastReceipt.id)}>
+            View PDF
+          </button>
         </p>
       )}
 
@@ -287,6 +304,7 @@ export function ReceiptsPage() {
               <th>Total</th>
               <th>Advance</th>
               <th>Balance</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -298,6 +316,11 @@ export function ReceiptsPage() {
                 <td>{r.total}</td>
                 <td>{r.advance}</td>
                 <td>{r.balance}</td>
+                <td>
+                  <button type="button" className="link-button" onClick={() => openPdf(r.id)}>
+                    PDF
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

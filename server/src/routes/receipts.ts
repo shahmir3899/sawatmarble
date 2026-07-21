@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../config/prisma";
 import { requireAuth } from "../middleware/requireAuth";
 import { requireRole } from "../middleware/requireRole";
+import { streamReceiptPdf } from "../pdf/receiptPdf";
 
 const router = Router();
 
@@ -34,6 +35,43 @@ router.get("/:id", requireAuth, async (req, res) => {
     return res.status(404).json({ error: "Not found" });
   }
   res.json({ receipt });
+});
+
+router.get("/:id/pdf", requireAuth, async (req, res) => {
+  const receipt = await prisma.receipt.findUnique({
+    where: { id: String(req.params.id) },
+    include: { items: { orderBy: { sortOrder: "asc" } }, customer: true },
+  });
+  if (!receipt) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  streamReceiptPdf(
+    {
+      invoiceNo: receipt.invoiceNo,
+      date: receipt.date,
+      previousBalance: receipt.previousBalance.toString(),
+      itemsTotal: receipt.itemsTotal.toString(),
+      total: receipt.total.toString(),
+      advance: receipt.advance.toString(),
+      balance: receipt.balance.toString(),
+      termsSnapshot: receipt.termsSnapshot,
+      customer: {
+        name: receipt.customer.name,
+        address: receipt.customer.address,
+        phone: receipt.customer.phone,
+      },
+      items: receipt.items.map((item) => ({
+        description: item.description,
+        size: item.size,
+        qty: item.qty.toString(),
+        sqft: item.sqft.toString(),
+        ratePerSqft: item.ratePerSqft.toString(),
+        amount: item.amount.toString(),
+      })),
+    },
+    res
+  );
 });
 
 type IncomingItem = {
