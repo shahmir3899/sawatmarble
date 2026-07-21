@@ -8,11 +8,12 @@ import { ContactsPage } from './pages/ContactsPage'
 import { InventoryPage } from './pages/InventoryPage'
 import { ReceiptsPage } from './pages/ReceiptsPage'
 import { QuotationsPage } from './pages/QuotationsPage'
+import { ChallansPage } from './pages/ChallansPage'
 import type { Role } from './lib/types'
 import './App.css'
 
 type Profile = { id: string; name: string | null; role: Role }
-type Tab = 'customers' | 'suppliers' | 'inventory' | 'receipts' | 'quotations'
+type Tab = 'customers' | 'suppliers' | 'inventory' | 'receipts' | 'quotations' | 'challans'
 
 function App() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'unreachable'>('checking')
@@ -54,6 +55,7 @@ function App() {
   const canManageInventory = profile?.role === 'owner' || profile?.role === 'staff'
   const canDeleteInventory = profile?.role === 'owner'
   const canManageQuotations = profile?.role === 'owner' || profile?.role === 'staff'
+  const canManageChallans = profile?.role === 'owner' || profile?.role === 'staff'
 
   return (
     <div className="app-shell">
@@ -92,6 +94,9 @@ function App() {
               <button className={tab === 'quotations' ? 'active' : ''} onClick={() => setTab('quotations')}>
                 Quotations
               </button>
+              <button className={tab === 'challans' ? 'active' : ''} onClick={() => setTab('challans')}>
+                Challans
+              </button>
             </nav>
 
             {profile &&
@@ -113,8 +118,10 @@ function App() {
                 <InventoryPage canManage={canManageInventory} canDelete={canDeleteInventory} />
               ) : tab === 'receipts' ? (
                 <ReceiptsPage />
-              ) : (
+              ) : tab === 'quotations' ? (
                 <QuotationsPage canManage={canManageQuotations} />
+              ) : (
+                <ChallansPage canManage={canManageChallans} />
               ))}
           </>
         ) : (

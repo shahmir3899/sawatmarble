@@ -72,6 +72,34 @@ export type Quotation = {
   items?: QuotationItem[]
 }
 
+export type ChallanStatus = 'draft' | 'dispatched' | 'delivered'
+
+export type DeliveryChallanItem = {
+  id: string
+  description: string
+  size: string | null
+  qty: string
+  sqft: string
+  ratePerSqft: string
+  amount: string
+  sortOrder: number
+}
+
+export type DeliveryChallan = {
+  id: string
+  challanNo: string
+  customerId: string
+  quotationId: string | null
+  date: string
+  status: ChallanStatus
+  vehicleNumber: string | null
+  driverName: string | null
+  itemsTotal: string
+  termsSnapshot: string | null
+  createdAt: string
+  items?: DeliveryChallanItem[]
+}
+
 export type InventoryItem = {
   id: string
   category: string
