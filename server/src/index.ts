@@ -6,6 +6,7 @@ import { prisma } from "./config/prisma";
 import customersRouter from "./routes/customers";
 import suppliersRouter from "./routes/suppliers";
 import inventoryRouter from "./routes/inventory";
+import paymentsRouter from "./routes/payments";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.get("/profile", requireAuth, async (req, res) => {
 app.use("/customers", customersRouter);
 app.use("/suppliers", suppliersRouter);
 app.use("/inventory", inventoryRouter);
+app.use("/payments", paymentsRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 app.listen(port, () => {

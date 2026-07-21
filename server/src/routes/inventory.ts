@@ -8,7 +8,10 @@ const router = Router();
 const VALID_UNITS = ["sqft", "piece"];
 
 router.get("/", requireAuth, async (_req, res) => {
-  const items = await prisma.inventoryItem.findMany({ orderBy: { description: "asc" } });
+  const items = await prisma.inventoryItem.findMany({
+    where: { active: true },
+    orderBy: { description: "asc" },
+  });
   res.json({ items });
 });
 
@@ -62,16 +65,19 @@ router.patch("/:id", requireAuth, requireRole("owner", "staff"), async (req, res
 });
 
 // Owner-only: removing an item type outright is rarer and more consequential
-// than adding/removing a customer or supplier contact.
+// than adding/removing a customer or supplier contact. Archives (active =
+// false) rather than hard deletes, same reasoning as customers/suppliers —
+// stock_movements has an ON DELETE RESTRICT FK to item_id to protect its
+// own audit trail.
 router.delete("/:id", requireAuth, requireRole("owner"), async (req, res) => {
   const item = await prisma.inventoryItem.findUnique({ where: { id: String(req.params.id) } });
   if (!item) {
     return res.status(404).json({ error: "Not found" });
   }
   if (Number(item.qtyOnHand) !== 0) {
-    return res.status(409).json({ error: "Cannot delete an item with non-zero quantity on hand" });
+    return res.status(409).json({ error: "Cannot remove an item with non-zero quantity on hand" });
   }
-  await prisma.inventoryItem.delete({ where: { id: String(req.params.id) } });
+  await prisma.inventoryItem.update({ where: { id: String(req.params.id) }, data: { active: false } });
   res.status(204).send();
 });
 

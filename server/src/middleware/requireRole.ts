@@ -1,11 +1,23 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import type { Role } from "../generated/prisma/enums";
+import type { Profile } from "../generated/prisma/client";
+
+declare global {
+  namespace Express {
+    interface Request {
+      profile?: Profile;
+    }
+  }
+}
 
 // Must run after requireAuth (needs req.user set). This is the primary
 // authorization gate — the backend's DB connection uses a role that
 // bypasses RLS, so RLS policies on the tables are defense-in-depth only,
 // not the real enforcement for requests that go through this API.
+// Attaches the resolved profile to req.profile so downstream handlers can
+// make finer-grained checks (e.g. "this field is owner-only") without a
+// second lookup.
 export function requireRole(...allowedRoles: Role[]) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
@@ -21,6 +33,7 @@ export function requireRole(...allowedRoles: Role[]) {
       return res.status(403).json({ error: "Insufficient role" });
     }
 
+    req.profile = profile;
     next();
   };
 }
