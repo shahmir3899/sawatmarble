@@ -130,6 +130,12 @@ main {
   margin: 0 0 16px;
 }
 
+.page-hint {
+  font-size: 13px;
+  color: #999999;
+  margin: -10px 0 16px;
+}
+
 .quick-add-form {
   display: flex;
   flex-wrap: wrap;

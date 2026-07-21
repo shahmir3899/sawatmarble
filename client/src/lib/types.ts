@@ -47,6 +47,31 @@ export type Receipt = {
   items?: ReceiptItem[]
 }
 
+export type QuotationStatus = 'draft' | 'sent' | 'accepted' | 'expired'
+
+export type QuotationItem = {
+  id: string
+  description: string
+  size: string | null
+  qty: string
+  sqft: string
+  ratePerSqft: string
+  amount: string
+  sortOrder: number
+}
+
+export type Quotation = {
+  id: string
+  quotationNo: string
+  customerId: string
+  date: string
+  status: QuotationStatus
+  itemsTotal: string
+  termsSnapshot: string | null
+  createdAt: string
+  items?: QuotationItem[]
+}
+
 export type InventoryItem = {
   id: string
   category: string
