@@ -266,6 +266,10 @@ model InventoryItem {
   unit              ItemUnit @default(sqft)
   defaultRatePerSqft Decimal? @map("default_rate_per_sqft") @db.Decimal(12, 2)
   qtyOnHand         Decimal  @default(0) @map("qty_on_hand") @db.Decimal(12, 2)
+  // Null means "not tracked for low-stock alerts" — a single global
+  // threshold would be meaningless across item types this different (a
+  // big slab vs. a box of patti strips), so this is per-item and optional.
+  reorderLevel      Decimal? @map("reorder_level") @db.Decimal(12, 2)
   active            Boolean  @default(true)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")

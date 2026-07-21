@@ -16,7 +16,7 @@ router.get("/", requireAuth, async (_req, res) => {
 });
 
 router.post("/", requireAuth, requireRole("owner", "staff"), async (req, res) => {
-  const { category, subCategory, description, size, unit, defaultRatePerSqft, qtyOnHand } = req.body;
+  const { category, subCategory, description, size, unit, defaultRatePerSqft, qtyOnHand, reorderLevel } = req.body;
 
   if (!category || !String(category).trim()) {
     return res.status(400).json({ error: "category is required" });
@@ -37,13 +37,14 @@ router.post("/", requireAuth, requireRole("owner", "staff"), async (req, res) =>
       unit: unit || "sqft",
       defaultRatePerSqft: defaultRatePerSqft ?? null,
       qtyOnHand: qtyOnHand ?? 0,
+      reorderLevel: reorderLevel ?? null,
     },
   });
   res.status(201).json({ item });
 });
 
 router.patch("/:id", requireAuth, requireRole("owner", "staff"), async (req, res) => {
-  const { category, subCategory, description, size, unit, defaultRatePerSqft, qtyOnHand } = req.body;
+  const { category, subCategory, description, size, unit, defaultRatePerSqft, qtyOnHand, reorderLevel } = req.body;
 
   if (unit !== undefined && !VALID_UNITS.includes(unit)) {
     return res.status(400).json({ error: `unit must be one of: ${VALID_UNITS.join(", ")}` });
@@ -59,6 +60,7 @@ router.patch("/:id", requireAuth, requireRole("owner", "staff"), async (req, res
       ...(unit !== undefined ? { unit } : {}),
       ...(defaultRatePerSqft !== undefined ? { defaultRatePerSqft } : {}),
       ...(qtyOnHand !== undefined ? { qtyOnHand } : {}),
+      ...(reorderLevel !== undefined ? { reorderLevel: reorderLevel || null } : {}),
     },
   });
   res.json({ item });
