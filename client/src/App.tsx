@@ -4,6 +4,8 @@ import logo from './assets/logo.jpeg'
 import { supabase } from './lib/supabaseClient'
 import { apiFetch } from './lib/api'
 import { LoginForm } from './components/LoginForm'
+import { Sidebar, type Tab } from './components/Sidebar'
+import { MenuIcon } from './components/icons'
 import { DashboardPage } from './pages/DashboardPage'
 import { ContactsPage } from './pages/ContactsPage'
 import { InventoryPage } from './pages/InventoryPage'
@@ -14,7 +16,6 @@ import type { Role } from './lib/types'
 import './App.css'
 
 type Profile = { id: string; name: string | null; role: Role }
-type Tab = 'dashboard' | 'customers' | 'suppliers' | 'inventory' | 'receipts' | 'quotations' | 'challans'
 
 function App() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'unreachable'>('checking')
@@ -22,6 +23,7 @@ function App() {
   const [sessionChecked, setSessionChecked] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [tab, setTab] = useState<Tab>('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:4000'
@@ -58,82 +60,78 @@ function App() {
   const canManageQuotations = profile?.role === 'owner' || profile?.role === 'staff'
   const canManageChallans = profile?.role === 'owner' || profile?.role === 'staff'
 
+  if (!sessionChecked) {
+    return (
+      <div className="app-shell centered-shell">
+        <p>Checking session…</p>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return (
+      <div className="app-shell centered-shell">
+        <div className="login-brand">
+          <img src={logo} alt="Sawat Marble Stone & Granite" className="app-logo" />
+          <h1>Sawat Marble Stone &amp; Granite</h1>
+        </div>
+        <LoginForm />
+      </div>
+    )
+  }
+
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <img src={logo} alt="Sawat Marble Stone & Granite" className="app-logo" />
-        <h1>Sawat Marble Stone &amp; Granite</h1>
-        {apiStatus !== 'ok' && <span className="api-warning">Backend API: {apiStatus}</span>}
-      </header>
-      <main>
-        {!sessionChecked ? (
-          <p>Checking session…</p>
-        ) : session ? (
-          <>
-            <div className="top-bar">
-              <span>
-                {session.user.email} · {profile ? profile.role : 'loading role…'}
-              </span>
-              <button className="link-button" onClick={() => supabase.auth.signOut()}>
-                Sign out
-              </button>
-            </div>
+    <div className="app-shell-v2">
+      <Sidebar
+        tab={tab}
+        onSelectTab={setTab}
+        email={session.user.email ?? ''}
+        role={profile?.role ?? null}
+        onSignOut={() => supabase.auth.signOut()}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-            <nav className="tab-bar">
-              <button className={tab === 'dashboard' ? 'active' : ''} onClick={() => setTab('dashboard')}>
-                Dashboard
-              </button>
-              <button className={tab === 'customers' ? 'active' : ''} onClick={() => setTab('customers')}>
-                Customers
-              </button>
-              <button className={tab === 'suppliers' ? 'active' : ''} onClick={() => setTab('suppliers')}>
-                Suppliers
-              </button>
-              <button className={tab === 'inventory' ? 'active' : ''} onClick={() => setTab('inventory')}>
-                Inventory
-              </button>
-              <button className={tab === 'receipts' ? 'active' : ''} onClick={() => setTab('receipts')}>
-                Receipts
-              </button>
-              <button className={tab === 'quotations' ? 'active' : ''} onClick={() => setTab('quotations')}>
-                Quotations
-              </button>
-              <button className={tab === 'challans' ? 'active' : ''} onClick={() => setTab('challans')}>
-                Challans
-              </button>
-            </nav>
+      <div className="main-area">
+        <header className="mobile-topbar">
+          <button className="hamburger-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+            <MenuIcon />
+          </button>
+          <img src={logo} alt="Sawat Marble Stone & Granite" />
+          <h1>Sawat Marble Stone &amp; Granite</h1>
+        </header>
 
-            {profile &&
-              (tab === 'dashboard' ? (
-                <DashboardPage />
-              ) : tab === 'customers' ? (
-                <ContactsPage
-                  resource="customers"
-                  title="Customers"
-                  canManage={canManageContacts}
-                  canEditBalance={canEditBalance}
-                />
-              ) : tab === 'suppliers' ? (
-                <ContactsPage
-                  resource="suppliers"
-                  title="Suppliers"
-                  canManage={canManageContacts}
-                  canEditBalance={canEditBalance}
-                />
-              ) : tab === 'inventory' ? (
-                <InventoryPage canManage={canManageInventory} canDelete={canDeleteInventory} />
-              ) : tab === 'receipts' ? (
-                <ReceiptsPage />
-              ) : tab === 'quotations' ? (
-                <QuotationsPage canManage={canManageQuotations} />
-              ) : (
-                <ChallansPage canManage={canManageChallans} />
-              ))}
-          </>
-        ) : (
-          <LoginForm />
-        )}
-      </main>
+        {apiStatus !== 'ok' && <div className="api-warning-banner">Backend API: {apiStatus}</div>}
+
+        <main className="main-content">
+          {profile &&
+            (tab === 'dashboard' ? (
+              <DashboardPage />
+            ) : tab === 'customers' ? (
+              <ContactsPage
+                resource="customers"
+                title="Customers"
+                canManage={canManageContacts}
+                canEditBalance={canEditBalance}
+              />
+            ) : tab === 'suppliers' ? (
+              <ContactsPage
+                resource="suppliers"
+                title="Suppliers"
+                canManage={canManageContacts}
+                canEditBalance={canEditBalance}
+              />
+            ) : tab === 'inventory' ? (
+              <InventoryPage canManage={canManageInventory} canDelete={canDeleteInventory} />
+            ) : tab === 'receipts' ? (
+              <ReceiptsPage />
+            ) : tab === 'quotations' ? (
+              <QuotationsPage canManage={canManageQuotations} />
+            ) : (
+              <ChallansPage canManage={canManageChallans} />
+            ))}
+        </main>
+      </div>
     </div>
   )
 }

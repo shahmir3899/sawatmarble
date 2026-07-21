@@ -170,42 +170,44 @@ export function InventoryPage({ canManage, canDelete }: Props) {
       ) : items.length === 0 ? (
         <p>No inventory items yet.</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Sub-category</th>
-              <th>Description</th>
-              <th>Size</th>
-              <th>Unit</th>
-              <th>Rate/Sq.ft</th>
-              <th>Qty on hand</th>
-              <th>Reorder level</th>
-              {canDelete && <th></th>}
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td>{item.category}</td>
-                <td>{item.subCategory ?? ''}</td>
-                <td>{item.description}</td>
-                <td>{item.size ?? ''}</td>
-                <td>{item.unit}</td>
-                <td>{item.defaultRatePerSqft ?? ''}</td>
-                <td>{item.qtyOnHand}</td>
-                <td>{item.reorderLevel ?? ''}</td>
-                {canDelete && (
-                  <td>
-                    <button type="button" className="link-button" onClick={() => setPendingDelete(item)}>
-                      Remove
-                    </button>
-                  </td>
-                )}
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Sub-category</th>
+                <th>Description</th>
+                <th>Size</th>
+                <th>Unit</th>
+                <th>Rate/Sq.ft</th>
+                <th>Qty on hand</th>
+                <th>Reorder level</th>
+                {canDelete && <th></th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.category}</td>
+                  <td>{item.subCategory ?? ''}</td>
+                  <td>{item.description}</td>
+                  <td>{item.size ?? ''}</td>
+                  <td>{item.unit}</td>
+                  <td>{item.defaultRatePerSqft ?? ''}</td>
+                  <td>{item.qtyOnHand}</td>
+                  <td>{item.reorderLevel ?? ''}</td>
+                  {canDelete && (
+                    <td>
+                      <button type="button" className="link-button" onClick={() => setPendingDelete(item)}>
+                        Remove
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <ConfirmDialog

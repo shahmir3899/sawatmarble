@@ -166,85 +166,87 @@ export function ReceiptsPage() {
           ))}
         </select>
 
-        <table className="data-table receipt-items-table">
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Length (ft)</th>
-              <th>Width (ft)</th>
-              <th>Qty</th>
-              <th>Sq.ft</th>
-              <th>Rate/Sq.ft</th>
-              <th>Amount</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, index) => (
-              <tr key={item.key}>
-                <td>
-                  <input
-                    value={item.description}
-                    onChange={(e) => updateItem(index, { description: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={item.length}
-                    onChange={(e) => updateItem(index, { length: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={item.width}
-                    onChange={(e) => updateItem(index, { width: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    step="1"
-                    value={item.qty}
-                    onChange={(e) => updateItem(index, { qty: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={item.sqft}
-                    onChange={(e) => updateItem(index, { sqft: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={item.ratePerSqft}
-                    onChange={(e) => updateItem(index, { ratePerSqft: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={item.amount}
-                    onChange={(e) => updateItem(index, { amount: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <button type="button" className="link-button" onClick={() => removeRow(index)}>
-                    Remove
-                  </button>
-                </td>
+        <div className="table-scroll">
+          <table className="data-table receipt-items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Length (ft)</th>
+                <th>Width (ft)</th>
+                <th>Qty</th>
+                <th>Sq.ft</th>
+                <th>Rate/Sq.ft</th>
+                <th>Amount</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((item, index) => (
+                <tr key={item.key}>
+                  <td>
+                    <input
+                      value={item.description}
+                      onChange={(e) => updateItem(index, { description: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={item.length}
+                      onChange={(e) => updateItem(index, { length: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={item.width}
+                      onChange={(e) => updateItem(index, { width: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      step="1"
+                      value={item.qty}
+                      onChange={(e) => updateItem(index, { qty: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={item.sqft}
+                      onChange={(e) => updateItem(index, { sqft: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={item.ratePerSqft}
+                      onChange={(e) => updateItem(index, { ratePerSqft: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={item.amount}
+                      onChange={(e) => updateItem(index, { amount: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <button type="button" className="link-button" onClick={() => removeRow(index)}>
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <button type="button" className="link-button" onClick={addRow}>
           + Add line
         </button>
@@ -295,36 +297,38 @@ export function ReceiptsPage() {
       ) : receipts.length === 0 ? (
         <p>No receipts yet.</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Invoice No</th>
-              <th>Customer</th>
-              <th>Date</th>
-              <th>Total</th>
-              <th>Advance</th>
-              <th>Balance</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {receipts.map((r) => (
-              <tr key={r.id}>
-                <td>{r.invoiceNo}</td>
-                <td>{customerName(r.customerId)}</td>
-                <td>{new Date(r.date).toLocaleDateString()}</td>
-                <td>{r.total}</td>
-                <td>{r.advance}</td>
-                <td>{r.balance}</td>
-                <td>
-                  <button type="button" className="link-button" onClick={() => openPdf(r.id)}>
-                    PDF
-                  </button>
-                </td>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Invoice No</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Advance</th>
+                <th>Balance</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {receipts.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.invoiceNo}</td>
+                  <td>{customerName(r.customerId)}</td>
+                  <td>{new Date(r.date).toLocaleDateString()}</td>
+                  <td>{r.total}</td>
+                  <td>{r.advance}</td>
+                  <td>{r.balance}</td>
+                  <td>
+                    <button type="button" className="link-button" onClick={() => openPdf(r.id)}>
+                      PDF
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

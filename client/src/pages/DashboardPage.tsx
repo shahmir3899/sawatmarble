@@ -80,28 +80,30 @@ export function DashboardPage() {
       {lowStockCount === 0 ? (
         <p>Nothing below its reorder level.</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Qty on hand</th>
-              <th>Reorder level</th>
-              <th>Unit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.lowStockItems.map((item) => (
-              <tr key={item.id}>
-                <td>{item.category}</td>
-                <td>{item.description}</td>
-                <td className="kpi-warning-text">{item.qtyOnHand}</td>
-                <td>{item.reorderLevel}</td>
-                <td>{item.unit}</td>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Qty on hand</th>
+                <th>Reorder level</th>
+                <th>Unit</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.lowStockItems.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.category}</td>
+                  <td>{item.description}</td>
+                  <td className="kpi-warning-text">{item.qtyOnHand}</td>
+                  <td>{item.reorderLevel}</td>
+                  <td>{item.unit}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <h2>Recent Activity</h2>

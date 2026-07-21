@@ -111,30 +111,32 @@ export function ContactsPage({ resource, title, canManage, canEditBalance }: Pro
       ) : contacts.length === 0 ? (
         <p>No {title.toLowerCase()} yet.</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Address</th>
-              <th>Balance</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {contacts.map((c) => (
-              <ContactRow
-                key={c.id}
-                contact={c}
-                canManage={canManage}
-                canEditBalance={canEditBalance}
-                onSave={handleFieldSave}
-                onDelete={() => setPendingDelete(c)}
-                onOpenLedger={() => setLedgerParty(c)}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Balance</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {contacts.map((c) => (
+                <ContactRow
+                  key={c.id}
+                  contact={c}
+                  canManage={canManage}
+                  canEditBalance={canEditBalance}
+                  onSave={handleFieldSave}
+                  onDelete={() => setPendingDelete(c)}
+                  onOpenLedger={() => setLedgerParty(c)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <ConfirmDialog
