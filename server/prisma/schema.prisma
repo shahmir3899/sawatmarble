@@ -26,6 +26,13 @@ enum StockDirection {
   OUT
 }
 
+enum QuotationStatus {
+  draft
+  sent
+  accepted
+  expired
+}
+
 // Mirrors auth.users (Supabase Auth) 1:1. Row is created automatically by a
 // trigger on auth.users insert (see migration SQL) with role defaulting to
 // staff; only an owner can promote/demote a role afterward (enforced by RLS).
@@ -39,6 +46,7 @@ model Profile {
   stockMovements StockMovement[]
   payments       Payment[]
   receipts       Receipt[]
+  quotations     Quotation[]
 
   @@map("profiles")
 }
@@ -57,8 +65,9 @@ model Customer {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  payments Payment[]
-  receipts Receipt[]
+  payments   Payment[]
+  receipts   Receipt[]
+  quotations Quotation[]
 
   @@map("customers")
 }
@@ -148,6 +157,47 @@ model ReceiptItem {
   receipt Receipt @relation(fields: [receiptId], references: [id])
 
   @@map("receipt_items")
+}
+
+// Optional, informal pre-sale document (per plan Section 6, often skipped
+// for walk-in stock sales) — never touches the ledger, unlike Receipt.
+// quotationNo uses its own numbering series (QT-0001...), independent of
+// the invoice sequence. Unlike Receipt, items and status are editable
+// after creation (owner/staff can revise a quotation before it's acted
+// on), since nothing financial has been committed yet.
+model Quotation {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quotationNo   String          @unique @default(dbgenerated("'QT-' || lpad(nextval('quotation_no_seq')::text, 4, '0')")) @map("quotation_no")
+  customerId    String          @map("customer_id") @db.Uuid
+  date          DateTime        @default(now())
+  status        QuotationStatus @default(draft)
+  itemsTotal    Decimal         @map("items_total") @db.Decimal(12, 2)
+  termsSnapshot String?         @map("terms_snapshot")
+  createdBy     String?         @map("created_by") @db.Uuid
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  customer Customer        @relation(fields: [customerId], references: [id])
+  creator  Profile?        @relation(fields: [createdBy], references: [id])
+  items    QuotationItem[]
+
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quotationId String  @map("quotation_id") @db.Uuid
+  description String
+  size        String?
+  qty         Decimal @db.Decimal(12, 2)
+  sqft        Decimal @db.Decimal(12, 2)
+  ratePerSqft Decimal @map("rate_per_sqft") @db.Decimal(12, 2)
+  amount      Decimal @db.Decimal(12, 2)
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@map("quotation_items")
 }
 
 model InventoryItem {
