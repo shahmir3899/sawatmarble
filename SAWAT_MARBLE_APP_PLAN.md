@@ -104,15 +104,15 @@ Fields present on the existing paper form, which the digital Quotation/Challan/I
 
 ---
 
-## 5. Data model overview (high-level — full DDL is a separate next step)
+## 5. Data model overview (high-level — remaining DDL is a separate next step)
 
-This is not the final schema — it's the entity list and relationships the agent should scaffold from, to be refined into full DDL before any migrations are written.
+The first five entities below are live (migration `20260721064907_init_core_tables`, `server/prisma/schema.prisma`) with RLS policies on every table as a defense-in-depth layer; the real authorization gate is the Express backend's `requireRole` middleware, since the backend's DB connection uses a role that bypasses RLS (see `server/src/middleware/requireRole.ts`). Everything below `stock_movements` is still just the entity list, to be refined into DDL once the ledger math (Section 3.3/6) is implemented.
 
-- `profiles` (id = FK to Supabase `auth.users.id`, name, phone, role: owner / staff / accountant) — role-based access enforced via Postgres RLS policies keyed off this table, not application-layer role checks alone
+- `profiles` (id = FK to Supabase `auth.users.id`, name, phone, role: owner / staff / accountant) — auto-created by a trigger on `auth.users` insert (default role `staff`); only an owner can change a role afterward
 - `customers` (name, address, phone, running `ledger_balance`)
 - `suppliers` (name, address, phone, running `ledger_balance`)
 - `inventory_items` (category, sub_category, description, size, default_rate_per_sqft, qty_on_hand, unit)
-- `stock_movements` (item_id, direction: in/out, qty, reference_type: purchase/sale/adjustment, reference_id)
+- `stock_movements` (item_id, direction: in/out, qty, reference_type: purchase/sale/adjustment, reference_id) — append-only, no update/delete policy
 - `purchases` (supplier_id, date, items[], total, advance_paid, balance) — updates supplier ledger + stock in
 - `quotations` (customer_id, date, items[], total, terms_snapshot, status)
 - `delivery_challans` (customer_id, quotation_id?, date, items[], vehicle/driver info, status: draft/dispatched/delivered)

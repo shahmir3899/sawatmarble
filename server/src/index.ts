@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { requireAuth } from "./middleware/requireAuth";
+import { requireRole } from "./middleware/requireRole";
+import { prisma } from "./config/prisma";
 
 const app = express();
 
@@ -14,6 +16,22 @@ app.get("/health", (_req, res) => {
 
 app.get("/whoami", requireAuth, (req, res) => {
   res.json({ user: req.user });
+});
+
+app.get("/profile", requireAuth, async (req, res) => {
+  const profile = await prisma.profile.findUnique({ where: { id: req.user!.id } });
+  res.json({ profile });
+});
+
+app.get("/customers", requireAuth, async (_req, res) => {
+  const customers = await prisma.customer.findMany({ orderBy: { name: "asc" } });
+  res.json({ customers });
+});
+
+app.post("/customers", requireAuth, requireRole("owner", "staff"), async (req, res) => {
+  const { name, address, phone } = req.body;
+  const customer = await prisma.customer.create({ data: { name, address, phone } });
+  res.status(201).json({ customer });
 });
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
