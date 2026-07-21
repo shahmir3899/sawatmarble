@@ -6,11 +6,12 @@ import { apiFetch } from './lib/api'
 import { LoginForm } from './components/LoginForm'
 import { ContactsPage } from './pages/ContactsPage'
 import { InventoryPage } from './pages/InventoryPage'
+import { ReceiptsPage } from './pages/ReceiptsPage'
 import type { Role } from './lib/types'
 import './App.css'
 
 type Profile = { id: string; name: string | null; role: Role }
-type Tab = 'customers' | 'suppliers' | 'inventory'
+type Tab = 'customers' | 'suppliers' | 'inventory' | 'receipts'
 
 function App() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'unreachable'>('checking')
@@ -83,6 +84,9 @@ function App() {
               <button className={tab === 'inventory' ? 'active' : ''} onClick={() => setTab('inventory')}>
                 Inventory
               </button>
+              <button className={tab === 'receipts' ? 'active' : ''} onClick={() => setTab('receipts')}>
+                Receipts
+              </button>
             </nav>
 
             {profile &&
@@ -100,8 +104,10 @@ function App() {
                   canManage={canManageContacts}
                   canEditBalance={canEditBalance}
                 />
-              ) : (
+              ) : tab === 'inventory' ? (
                 <InventoryPage canManage={canManageInventory} canDelete={canDeleteInventory} />
+              ) : (
+                <ReceiptsPage />
               ))}
           </>
         ) : (

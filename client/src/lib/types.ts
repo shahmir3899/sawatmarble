@@ -21,6 +21,32 @@ export type Payment = {
   createdAt: string
 }
 
+export type ReceiptItem = {
+  id: string
+  description: string
+  size: string | null
+  qty: string
+  sqft: string
+  ratePerSqft: string
+  amount: string
+  sortOrder: number
+}
+
+export type Receipt = {
+  id: string
+  invoiceNo: number
+  customerId: string
+  date: string
+  previousBalance: string
+  itemsTotal: string
+  total: string
+  advance: string
+  balance: string
+  termsSnapshot: string | null
+  createdAt: string
+  items?: ReceiptItem[]
+}
+
 export type InventoryItem = {
   id: string
   category: string
