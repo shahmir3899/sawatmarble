@@ -4,16 +4,20 @@ import logo from './assets/logo.jpeg'
 import { supabase } from './lib/supabaseClient'
 import { apiFetch } from './lib/api'
 import { LoginForm } from './components/LoginForm'
+import { ContactsPage } from './pages/ContactsPage'
+import { InventoryPage } from './pages/InventoryPage'
+import type { Role } from './lib/types'
 import './App.css'
 
-type Profile = { id: string; name: string | null; role: 'owner' | 'staff' | 'accountant' }
+type Profile = { id: string; name: string | null; role: Role }
+type Tab = 'customers' | 'suppliers' | 'inventory'
 
 function App() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'unreachable'>('checking')
   const [session, setSession] = useState<Session | null>(null)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [demoResult, setDemoResult] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('customers')
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:4000'
@@ -43,40 +47,52 @@ function App() {
       .catch(() => setProfile(null))
   }, [session])
 
-  async function tryCreateCustomer() {
-    setDemoResult('Trying…')
-    const res = await apiFetch('/customers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: `Demo customer ${Date.now()}` }),
-    })
-    const body = await res.json()
-    setDemoResult(`HTTP ${res.status}: ${JSON.stringify(body)}`)
-  }
+  const canManageContacts = profile?.role === 'owner' || profile?.role === 'staff'
+  const canManageInventory = profile?.role === 'owner' || profile?.role === 'staff'
+  const canDeleteInventory = profile?.role === 'owner'
 
   return (
     <div className="app-shell">
       <header className="app-header">
         <img src={logo} alt="Sawat Marble Stone & Granite" className="app-logo" />
         <h1>Sawat Marble Stone &amp; Granite</h1>
+        {apiStatus !== 'ok' && <span className="api-warning">Backend API: {apiStatus}</span>}
       </header>
       <main>
-        <p>Backend API: {apiStatus}</p>
-
         {!sessionChecked ? (
           <p>Checking session…</p>
         ) : session ? (
-          <div className="signed-in-panel">
-            <p>Signed in as {session.user.email}</p>
-            <p>Role: {profile ? profile.role : 'loading…'}</p>
-            <button onClick={tryCreateCustomer}>
-              Try: create test customer (requires owner or staff role)
-            </button>
-            {demoResult && <p className="demo-result">{demoResult}</p>}
-            <button className="link-button" onClick={() => supabase.auth.signOut()}>
-              Sign out
-            </button>
-          </div>
+          <>
+            <div className="top-bar">
+              <span>
+                {session.user.email} · {profile ? profile.role : 'loading role…'}
+              </span>
+              <button className="link-button" onClick={() => supabase.auth.signOut()}>
+                Sign out
+              </button>
+            </div>
+
+            <nav className="tab-bar">
+              <button className={tab === 'customers' ? 'active' : ''} onClick={() => setTab('customers')}>
+                Customers
+              </button>
+              <button className={tab === 'suppliers' ? 'active' : ''} onClick={() => setTab('suppliers')}>
+                Suppliers
+              </button>
+              <button className={tab === 'inventory' ? 'active' : ''} onClick={() => setTab('inventory')}>
+                Inventory
+              </button>
+            </nav>
+
+            {profile &&
+              (tab === 'customers' ? (
+                <ContactsPage resource="customers" title="Customers" canManage={canManageContacts} />
+              ) : tab === 'suppliers' ? (
+                <ContactsPage resource="suppliers" title="Suppliers" canManage={canManageContacts} />
+              ) : (
+                <InventoryPage canManage={canManageInventory} canDelete={canDeleteInventory} />
+              ))}
+          </>
         ) : (
           <LoginForm />
         )}
