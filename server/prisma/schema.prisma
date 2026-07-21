@@ -33,6 +33,12 @@ enum QuotationStatus {
   expired
 }
 
+enum ChallanStatus {
+  draft
+  dispatched
+  delivered
+}
+
 // Mirrors auth.users (Supabase Auth) 1:1. Row is created automatically by a
 // trigger on auth.users insert (see migration SQL) with role defaulting to
 // staff; only an owner can promote/demote a role afterward (enforced by RLS).
@@ -43,10 +49,11 @@ model Profile {
   role      Role     @default(staff)
   createdAt DateTime @default(now()) @map("created_at")
 
-  stockMovements StockMovement[]
-  payments       Payment[]
-  receipts       Receipt[]
-  quotations     Quotation[]
+  stockMovements   StockMovement[]
+  payments         Payment[]
+  receipts         Receipt[]
+  quotations       Quotation[]
+  deliveryChallans DeliveryChallan[]
 
   @@map("profiles")
 }
@@ -65,9 +72,10 @@ model Customer {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  payments   Payment[]
-  receipts   Receipt[]
-  quotations Quotation[]
+  payments         Payment[]
+  receipts         Receipt[]
+  quotations       Quotation[]
+  deliveryChallans DeliveryChallan[]
 
   @@map("customers")
 }
@@ -177,9 +185,10 @@ model Quotation {
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
-  customer Customer        @relation(fields: [customerId], references: [id])
-  creator  Profile?        @relation(fields: [createdBy], references: [id])
-  items    QuotationItem[]
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  creator          Profile?          @relation(fields: [createdBy], references: [id])
+  items            QuotationItem[]
+  deliveryChallans DeliveryChallan[]
 
   @@map("quotations")
 }
@@ -198,6 +207,54 @@ model QuotationItem {
   quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
 
   @@map("quotation_items")
+}
+
+// Goods-leave-the-yard document (per plan Section 5: "vehicle/driver info,
+// status: draft/dispatched/delivered"). Like Quotation, never touches the
+// ledger, so stays fully editable, and its own DC-0001 numbering series is
+// independent of both invoice_no_seq and quotation_no_seq. quotationId is
+// an optional back-reference for when a challan originated from a
+// quotation — SET NULL on delete so removing a quotation doesn't break the
+// delivery record. The signature line matters most here of all three
+// document types (per Section 3.3: "especially relevant for the Delivery
+// Challan") since it's the physical goods-received sign-off.
+model DeliveryChallan {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challanNo     String        @unique @default(dbgenerated("'DC-' || lpad(nextval('challan_no_seq')::text, 4, '0')")) @map("challan_no")
+  customerId    String        @map("customer_id") @db.Uuid
+  quotationId   String?       @map("quotation_id") @db.Uuid
+  date          DateTime      @default(now())
+  status        ChallanStatus @default(draft)
+  vehicleNumber String?       @map("vehicle_number")
+  driverName    String?       @map("driver_name")
+  itemsTotal    Decimal       @map("items_total") @db.Decimal(12, 2)
+  termsSnapshot String?       @map("terms_snapshot")
+  createdBy     String?       @map("created_by") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  customer  Customer              @relation(fields: [customerId], references: [id])
+  quotation Quotation?            @relation(fields: [quotationId], references: [id])
+  creator   Profile?              @relation(fields: [createdBy], references: [id])
+  items     DeliveryChallanItem[]
+
+  @@map("delivery_challans")
+}
+
+model DeliveryChallanItem {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challanId   String  @map("challan_id") @db.Uuid
+  description String
+  size        String?
+  qty         Decimal @db.Decimal(12, 2)
+  sqft        Decimal @db.Decimal(12, 2)
+  ratePerSqft Decimal @map("rate_per_sqft") @db.Decimal(12, 2)
+  amount      Decimal @db.Decimal(12, 2)
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  challan DeliveryChallan @relation(fields: [challanId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_challan_items")
 }
 
 model InventoryItem {
