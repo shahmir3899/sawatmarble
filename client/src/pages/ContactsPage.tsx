@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { Contact } from '../lib/types'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 
 type Props = {
   resource: 'customers' | 'suppliers'
@@ -16,6 +17,7 @@ export function ContactsPage({ resource, title, canManage }: Props) {
   const [newPhone, setNewPhone] = useState('')
   const [newAddress, setNewAddress] = useState('')
   const [adding, setAdding] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Contact | null>(null)
 
   async function load() {
     setLoading(true)
@@ -65,12 +67,14 @@ export function ContactsPage({ resource, title, canManage }: Props) {
     load()
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Remove this record?')) return
+  async function confirmDelete() {
+    if (!pendingDelete) return
+    const id = pendingDelete.id
+    setPendingDelete(null)
     const res = await apiFetch(`/${resource}/${id}`, { method: 'DELETE' })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      alert(body.error ?? `Failed to delete (HTTP ${res.status})`)
+      setError(body.error ?? `Failed to delete (HTTP ${res.status})`)
       return
     }
     load()
@@ -114,12 +118,19 @@ export function ContactsPage({ resource, title, canManage }: Props) {
                 contact={c}
                 canManage={canManage}
                 onSave={handleFieldSave}
-                onDelete={handleDelete}
+                onDelete={() => setPendingDelete(c)}
               />
             ))}
           </tbody>
         </table>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        message={`Remove "${pendingDelete?.name}"? This can't be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   )
 }
