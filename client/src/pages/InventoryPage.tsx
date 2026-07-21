@@ -24,6 +24,7 @@ export function InventoryPage({ canManage, canDelete }: Props) {
   const [width, setWidth] = useState('')
   const [qty, setQty] = useState('')
   const [rate, setRate] = useState('')
+  const [reorderLevel, setReorderLevel] = useState('')
   const [adding, setAdding] = useState(false)
 
   const lengthNum = Number(length) || 0
@@ -64,6 +65,7 @@ export function InventoryPage({ canManage, canDelete }: Props) {
         unit: trackMode,
         defaultRatePerSqft: rate ? Number(rate) : undefined,
         qtyOnHand,
+        reorderLevel: reorderLevel ? Number(reorderLevel) : undefined,
       }),
     })
     setAdding(false)
@@ -79,6 +81,7 @@ export function InventoryPage({ canManage, canDelete }: Props) {
     setWidth('')
     setQty('')
     setRate('')
+    setReorderLevel('')
     load()
   }
 
@@ -111,6 +114,13 @@ export function InventoryPage({ canManage, canDelete }: Props) {
               required
             />
             <input placeholder="Rate/Sq.ft" type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} />
+            <input
+              placeholder="Reorder level (optional)"
+              type="number"
+              step="0.01"
+              value={reorderLevel}
+              onChange={(e) => setReorderLevel(e.target.value)}
+            />
           </div>
 
           <div className="unit-toggle">
@@ -170,6 +180,7 @@ export function InventoryPage({ canManage, canDelete }: Props) {
               <th>Unit</th>
               <th>Rate/Sq.ft</th>
               <th>Qty on hand</th>
+              <th>Reorder level</th>
               {canDelete && <th></th>}
             </tr>
           </thead>
@@ -183,6 +194,7 @@ export function InventoryPage({ canManage, canDelete }: Props) {
                 <td>{item.unit}</td>
                 <td>{item.defaultRatePerSqft ?? ''}</td>
                 <td>{item.qtyOnHand}</td>
+                <td>{item.reorderLevel ?? ''}</td>
                 {canDelete && (
                   <td>
                     <button type="button" className="link-button" onClick={() => setPendingDelete(item)}>

@@ -109,6 +109,31 @@ export type InventoryItem = {
   unit: 'sqft' | 'piece'
   defaultRatePerSqft: string | null
   qtyOnHand: string
+  reorderLevel: string | null
   createdAt: string
   updatedAt: string
+}
+
+export type LowStockItem = {
+  id: string
+  category: string
+  description: string
+  unit: 'sqft' | 'piece'
+  qtyOnHand: string
+  reorderLevel: string
+}
+
+export type ActivityEntry = {
+  type: 'receipt' | 'quotation' | 'challan' | 'payment'
+  id: string
+  label: string
+  amount: string | null
+  createdAt: string
+}
+
+export type DashboardData = {
+  todaysSales: string
+  outstandingReceivables: string
+  lowStockItems: LowStockItem[]
+  recentActivity: ActivityEntry[]
 }

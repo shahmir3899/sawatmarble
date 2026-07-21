@@ -4,6 +4,7 @@ import logo from './assets/logo.jpeg'
 import { supabase } from './lib/supabaseClient'
 import { apiFetch } from './lib/api'
 import { LoginForm } from './components/LoginForm'
+import { DashboardPage } from './pages/DashboardPage'
 import { ContactsPage } from './pages/ContactsPage'
 import { InventoryPage } from './pages/InventoryPage'
 import { ReceiptsPage } from './pages/ReceiptsPage'
@@ -13,14 +14,14 @@ import type { Role } from './lib/types'
 import './App.css'
 
 type Profile = { id: string; name: string | null; role: Role }
-type Tab = 'customers' | 'suppliers' | 'inventory' | 'receipts' | 'quotations' | 'challans'
+type Tab = 'dashboard' | 'customers' | 'suppliers' | 'inventory' | 'receipts' | 'quotations' | 'challans'
 
 function App() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'unreachable'>('checking')
   const [session, setSession] = useState<Session | null>(null)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [tab, setTab] = useState<Tab>('customers')
+  const [tab, setTab] = useState<Tab>('dashboard')
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:4000'
@@ -79,6 +80,9 @@ function App() {
             </div>
 
             <nav className="tab-bar">
+              <button className={tab === 'dashboard' ? 'active' : ''} onClick={() => setTab('dashboard')}>
+                Dashboard
+              </button>
               <button className={tab === 'customers' ? 'active' : ''} onClick={() => setTab('customers')}>
                 Customers
               </button>
@@ -100,7 +104,9 @@ function App() {
             </nav>
 
             {profile &&
-              (tab === 'customers' ? (
+              (tab === 'dashboard' ? (
+                <DashboardPage />
+              ) : tab === 'customers' ? (
                 <ContactsPage
                   resource="customers"
                   title="Customers"
