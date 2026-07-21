@@ -7,6 +7,7 @@ import customersRouter from "./routes/customers";
 import suppliersRouter from "./routes/suppliers";
 import inventoryRouter from "./routes/inventory";
 import paymentsRouter from "./routes/payments";
+import receiptsRouter from "./routes/receipts";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/customers", customersRouter);
 app.use("/suppliers", suppliersRouter);
 app.use("/inventory", inventoryRouter);
 app.use("/payments", paymentsRouter);
+app.use("/receipts", receiptsRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 app.listen(port, () => {
