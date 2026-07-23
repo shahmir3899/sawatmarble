@@ -176,7 +176,10 @@ export function ChallansPage({ canManage }: Props) {
     load()
   }
 
-  async function openPdf(id: string) {
+  // Auth here is a Bearer token, not a cookie session, so a plain <a href>
+  // can't carry it — fetch the PDF as a blob with the token attached, then
+  // save it via a temporary <a download> link.
+  async function downloadPdf(id: string, challanNo: string) {
     const res = await apiFetch(`/delivery-challans/${id}/pdf`)
     if (!res.ok) {
       setError(`Failed to load PDF (HTTP ${res.status})`)
@@ -184,7 +187,11 @@ export function ChallansPage({ canManage }: Props) {
     }
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
-    window.open(url, '_blank')
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${challanNo}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   function customerName(id: string) {
@@ -325,8 +332,8 @@ export function ChallansPage({ canManage }: Props) {
       {lastChallan && (
         <p className="demo-result">
           Challan {lastChallan.challanNo} created for {customerName(lastChallan.customerId)}.{' '}
-          <button type="button" className="link-button" onClick={() => openPdf(lastChallan.id)}>
-            View PDF
+          <button type="button" className="link-button" onClick={() => downloadPdf(lastChallan.id, lastChallan.challanNo)}>
+            PDF
           </button>
         </p>
       )}
@@ -374,7 +381,7 @@ export function ChallansPage({ canManage }: Props) {
                   </td>
                   <td>{c.itemsTotal}</td>
                   <td className="row-actions">
-                    <button type="button" className="link-button" onClick={() => openPdf(c.id)}>
+                    <button type="button" className="link-button" onClick={() => downloadPdf(c.id, c.challanNo)}>
                       PDF
                     </button>
                     {canManage && (

@@ -159,7 +159,10 @@ export function QuotationsPage({ canManage }: Props) {
     load()
   }
 
-  async function openPdf(id: string) {
+  // Auth here is a Bearer token, not a cookie session, so a plain <a href>
+  // can't carry it — fetch the PDF as a blob with the token attached, then
+  // save it via a temporary <a download> link.
+  async function downloadPdf(id: string, quotationNo: string) {
     const res = await apiFetch(`/quotations/${id}/pdf`)
     if (!res.ok) {
       setError(`Failed to load PDF (HTTP ${res.status})`)
@@ -167,7 +170,11 @@ export function QuotationsPage({ canManage }: Props) {
     }
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
-    window.open(url, '_blank')
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${quotationNo}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   function customerName(id: string) {
@@ -293,8 +300,8 @@ export function QuotationsPage({ canManage }: Props) {
       {lastQuotation && (
         <p className="demo-result">
           Quotation {lastQuotation.quotationNo} created for {customerName(lastQuotation.customerId)}.{' '}
-          <button type="button" className="link-button" onClick={() => openPdf(lastQuotation.id)}>
-            View PDF
+          <button type="button" className="link-button" onClick={() => downloadPdf(lastQuotation.id, lastQuotation.quotationNo)}>
+            PDF
           </button>
         </p>
       )}
@@ -341,7 +348,7 @@ export function QuotationsPage({ canManage }: Props) {
                   </td>
                   <td>{q.itemsTotal}</td>
                   <td className="row-actions">
-                    <button type="button" className="link-button" onClick={() => openPdf(q.id)}>
+                    <button type="button" className="link-button" onClick={() => downloadPdf(q.id, q.quotationNo)}>
                       PDF
                     </button>
                     {canManage && (
