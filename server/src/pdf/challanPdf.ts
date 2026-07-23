@@ -123,7 +123,7 @@ export function streamChallanPdf(challan: ChallanForPdf, res: Response) {
     termsY += doc.heightOfString(`• ${term}`, { width: pageWidth }) + 3;
   }
 
-  y = termsY + 20;
+  y = termsY + 36;
 
   // Signature matters most here of the three document types — this is the
   // physical goods-received sign-off (plan Section 3.3).

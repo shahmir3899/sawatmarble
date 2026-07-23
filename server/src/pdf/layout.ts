@@ -32,13 +32,22 @@ export function contentBottom(doc: PDFDoc) {
 export function drawLetterhead(doc: PDFDoc, left: number, y: number, pageWidth: number, badge?: string) {
   doc.image(LOGO_PATH, left, y, { width: LOGO_HEIGHT, height: LOGO_HEIGHT });
   const textX = left + LOGO_HEIGHT * LOGO_ASPECT + 14;
-  // Text block (title + subtitle) is vertically centered against the logo square.
-  doc.fillColor(BLACK).font("Helvetica-Bold").fontSize(20).text("SAWAT", textX, y + 16, { lineBreak: false });
+
+  // Company name as one line, sized to fill the space next to the logo
+  // without running into the badge (DELIVERY CHALLAN / QUOTATION) on the right.
+  const name = "SAWAT MARBLE STONE & GRANITE";
+  const badgeReserve = badge ? 150 : 0;
+  const availableWidth = pageWidth - (textX - left) - badgeReserve;
+  doc.font("Helvetica-Bold");
+  let fontSize = 24;
+  while (fontSize > 12 && doc.fontSize(fontSize).widthOfString(name) > availableWidth) {
+    fontSize -= 1;
+  }
   doc
-    .fillColor(GRAY)
-    .font("Helvetica")
-    .fontSize(10)
-    .text("MARBLE STONE & GRANITE", textX, y + 44, { lineBreak: false });
+    .fillColor(BLACK)
+    .font("Helvetica-Bold")
+    .fontSize(fontSize)
+    .text(name, textX, y + (LOGO_HEIGHT - fontSize) / 2, { lineBreak: false });
 
   if (badge) {
     const badgeWidth = 140;

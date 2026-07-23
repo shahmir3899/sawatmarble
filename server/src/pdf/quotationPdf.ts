@@ -119,7 +119,7 @@ export function streamQuotationPdf(quotation: QuotationForPdf, res: Response) {
     termsY += doc.heightOfString(`• ${term}`, { width: pageWidth }) + 3;
   }
 
-  y = termsY + 20;
+  y = termsY + 36;
 
   // --- Signature lines ---
   y = ensureSpaceAboveFooter(doc, y, 20);

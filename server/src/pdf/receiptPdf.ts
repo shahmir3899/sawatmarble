@@ -186,7 +186,7 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
     });
   });
 
-  y = Math.max(termsY, bankTop + bankBoxHeight) + 24;
+  y = Math.max(termsY, bankTop + bankBoxHeight) + 40;
 
   // --- Signature lines ---
   y = ensureSpaceAboveFooter(doc, y, 20);
