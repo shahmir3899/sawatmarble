@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import type { Response } from "express";
+import { formatMoney } from "./format";
 
 // Same red/black palette as Receipt/Quotation PDFs (see receiptPdf.ts for
 // the fuller rationale).
@@ -121,7 +122,15 @@ export function streamChallanPdf(challan: ChallanForPdf, res: Response) {
     }
     x = left;
     const qtyDisplay = Number(item.qty) > 0 ? item.qty : "1";
-    const values = [String(idx + 1), item.description, item.size ?? "", qtyDisplay, item.sqft, item.ratePerSqft, item.amount];
+    const values = [
+      String(idx + 1),
+      item.description,
+      item.size ?? "",
+      qtyDisplay,
+      item.sqft,
+      formatMoney(item.ratePerSqft),
+      formatMoney(item.amount),
+    ];
     doc.fillColor(BLACK);
     values.forEach((val, i) => {
       doc.text(val, x + 4, rowY + 6, { width: colWidths[i]! - 8, lineBreak: false });
@@ -139,7 +148,7 @@ export function streamChallanPdf(challan: ChallanForPdf, res: Response) {
     .fillColor(BLACK)
     .font("Helvetica-Bold")
     .fontSize(11)
-    .text(`Total: ${challan.itemsTotal}`, left, y, { width: pageWidth, align: "right", lineBreak: false });
+    .text(`Total: ${formatMoney(challan.itemsTotal)}`, left, y, { width: pageWidth, align: "right", lineBreak: false });
   y += 26;
 
   // --- Terms ---

@@ -1,17 +1,13 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../lib/api'
 import type { ActivityEntry, DashboardData } from '../lib/types'
+import { formatMoney } from '../lib/format'
 
 const ACTIVITY_LABELS: Record<ActivityEntry['type'], string> = {
   receipt: 'Invoice',
   quotation: 'Quotation',
   challan: 'Challan',
   payment: 'Payment',
-}
-
-function formatMoney(value: string) {
-  const num = Number(value)
-  return num.toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 
 export function DashboardPage() {

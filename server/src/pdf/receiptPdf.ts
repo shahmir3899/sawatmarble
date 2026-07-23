@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import type { Response } from "express";
+import { formatMoney } from "./format";
 
 // Palette matches the physical paper invoice book (red/black), not the
 // gold app-chrome branding — per the confirmed decision that documents
@@ -131,8 +132,8 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
       item.size ?? "",
       qtyDisplay,
       item.sqft,
-      `${CURRENCY} ${item.ratePerSqft}`,
-      `${CURRENCY} ${item.amount}`,
+      `${CURRENCY} ${formatMoney(item.ratePerSqft)}`,
+      `${CURRENCY} ${formatMoney(item.amount)}`,
     ];
     doc.fillColor(BLACK);
     values.forEach((val, i) => {
@@ -164,10 +165,10 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
   }
 
   const ledgerRows: [string, string][] = [
-    ["Previous Balance", `${CURRENCY} ${receipt.previousBalance}`],
-    ["Total", `${CURRENCY} ${receipt.total}`],
-    ["Advance", `${CURRENCY} ${receipt.advance}`],
-    ["Balance", `${CURRENCY} ${receipt.balance}`],
+    ["Previous Balance", `${CURRENCY} ${formatMoney(receipt.previousBalance)}`],
+    ["Total", `${CURRENCY} ${formatMoney(receipt.total)}`],
+    ["Advance", `${CURRENCY} ${formatMoney(receipt.advance)}`],
+    ["Balance", `${CURRENCY} ${formatMoney(receipt.balance)}`],
   ];
   const ledgerRowHeight = 18;
   const ledgerBoxHeight = ledgerRowHeight * ledgerRows.length;

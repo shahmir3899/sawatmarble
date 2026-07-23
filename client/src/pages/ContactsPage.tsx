@@ -3,6 +3,7 @@ import { apiFetch } from '../lib/api'
 import type { Contact } from '../lib/types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { LedgerDialog } from '../components/LedgerDialog'
+import { formatMoney } from '../lib/format'
 
 type Props = {
   resource: 'customers' | 'suppliers'
@@ -211,7 +212,7 @@ function ContactRow({
             onBlur={() => balance !== contact.ledgerBalance && onSave(contact.id, 'ledgerBalance', balance)}
           />
         ) : (
-          contact.ledgerBalance
+          formatMoney(contact.ledgerBalance)
         )}
       </td>
       <td className="row-actions">

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { ChallanStatus, Contact, DeliveryChallan, Quotation } from '../lib/types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { formatMoney } from '../lib/format'
 
 type DraftItem = {
   key: string
@@ -192,7 +193,11 @@ export function ChallansPage({ canManage }: Props) {
     const a = document.createElement('a')
     a.href = url
     a.download = `${challanNo}.pdf`
+    // Some browsers (Firefox in particular) ignore .click() on an <a> that
+    // isn't attached to the DOM and fall back to just navigating/opening it.
+    document.body.appendChild(a)
     a.click()
+    a.remove()
     URL.revokeObjectURL(url)
   }
 
@@ -321,7 +326,7 @@ export function ChallansPage({ canManage }: Props) {
           <div className="receipt-summary">
             <div />
             <div className="receipt-totals">
-              <span className="ledger-balance">Total: {itemsTotal.toFixed(2)}</span>
+              <span className="ledger-balance">Total: {formatMoney(itemsTotal)}</span>
             </div>
           </div>
 
@@ -381,7 +386,7 @@ export function ChallansPage({ canManage }: Props) {
                       c.status
                     )}
                   </td>
-                  <td>{c.itemsTotal}</td>
+                  <td>{formatMoney(c.itemsTotal)}</td>
                   <td className="row-actions">
                     <button type="button" className="link-button" onClick={() => downloadPdf(c.id, c.challanNo)}>
                       PDF

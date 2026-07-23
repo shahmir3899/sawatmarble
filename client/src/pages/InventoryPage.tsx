@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { InventoryItem } from '../lib/types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { formatMoney } from '../lib/format'
 
 type Props = {
   canManage: boolean
@@ -193,7 +194,7 @@ export function InventoryPage({ canManage, canDelete }: Props) {
                   <td>{item.description}</td>
                   <td>{item.size ?? ''}</td>
                   <td>{item.unit}</td>
-                  <td>{item.defaultRatePerSqft ?? ''}</td>
+                  <td>{item.defaultRatePerSqft !== null ? formatMoney(item.defaultRatePerSqft) : ''}</td>
                   <td>{item.qtyOnHand}</td>
                   <td>{item.reorderLevel ?? ''}</td>
                   {canDelete && (

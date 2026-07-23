@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { Contact, Receipt } from '../lib/types'
+import { formatMoney } from '../lib/format'
 
 type DraftItem = {
   key: string
@@ -154,7 +155,11 @@ export function ReceiptsPage() {
     const a = document.createElement('a')
     a.href = url
     a.download = `${invoiceNo}.pdf`
+    // Some browsers (Firefox in particular) ignore .click() on an <a> that
+    // isn't attached to the DOM and fall back to just navigating/opening it.
+    document.body.appendChild(a)
     a.click()
+    a.remove()
     URL.revokeObjectURL(url)
   }
 
@@ -274,11 +279,11 @@ export function ReceiptsPage() {
             </select>
           </div>
           <div className="receipt-totals">
-            <span>Previous Balance: {previousBalance.toFixed(2)}</span>
-            <span>Items Total: {itemsTotal.toFixed(2)}</span>
-            <span>Total: {total.toFixed(2)}</span>
-            <span>Advance: {advanceNum.toFixed(2)}</span>
-            <span className="ledger-balance">Balance: {balance.toFixed(2)}</span>
+            <span>Previous Balance: {formatMoney(previousBalance)}</span>
+            <span>Items Total: {formatMoney(itemsTotal)}</span>
+            <span>Total: {formatMoney(total)}</span>
+            <span>Advance: {formatMoney(advanceNum)}</span>
+            <span className="ledger-balance">Balance: {formatMoney(balance)}</span>
           </div>
         </div>
 
@@ -290,7 +295,7 @@ export function ReceiptsPage() {
       {lastReceipt && (
         <p className="demo-result">
           Invoice #{lastReceipt.invoiceNo} created for {customerName(lastReceipt.customerId)} — new balance{' '}
-          {lastReceipt.balance}.{' '}
+          {formatMoney(lastReceipt.balance)}.{' '}
           <button type="button" className="link-button" onClick={() => downloadPdf(lastReceipt.id, lastReceipt.invoiceNo)}>
             PDF
           </button>
@@ -322,9 +327,9 @@ export function ReceiptsPage() {
                   <td>{r.invoiceNo}</td>
                   <td>{customerName(r.customerId)}</td>
                   <td>{new Date(r.date).toLocaleDateString()}</td>
-                  <td>{r.total}</td>
-                  <td>{r.advance}</td>
-                  <td>{r.balance}</td>
+                  <td>{formatMoney(r.total)}</td>
+                  <td>{formatMoney(r.advance)}</td>
+                  <td>{formatMoney(r.balance)}</td>
                   <td>
                     <button type="button" className="link-button" onClick={() => downloadPdf(r.id, r.invoiceNo)}>
                       PDF

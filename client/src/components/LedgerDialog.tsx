@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { Contact, Payment } from '../lib/types'
+import { formatMoney } from '../lib/format'
 
 type Props = {
   open: boolean
@@ -66,7 +67,7 @@ export function LedgerDialog({ open, party, resource, onClose, onBalanceChanged 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box ledger-box" onClick={(e) => e.stopPropagation()}>
         <h3>Ledger — {party.name}</h3>
-        <p className="ledger-balance">Current balance: {party.ledgerBalance}</p>
+        <p className="ledger-balance">Current balance: {formatMoney(party.ledgerBalance)}</p>
 
         {loading ? (
           <p>Loading…</p>
@@ -76,7 +77,7 @@ export function LedgerDialog({ open, party, resource, onClose, onBalanceChanged 
           <ul className="ledger-history">
             {payments.map((p) => (
               <li key={p.id}>
-                {new Date(p.paymentDate).toLocaleDateString()} — {p.amount}
+                {new Date(p.paymentDate).toLocaleDateString()} — {formatMoney(p.amount)}
                 {p.method ? ` (${p.method})` : ''}
                 {p.note ? ` — ${p.note}` : ''}
               </li>
