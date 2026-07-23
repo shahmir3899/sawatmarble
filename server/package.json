@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').cpSync('src/pdf/assets','dist/pdf/assets',{recursive:true})\"",
     "start": "node dist/index.js",
     "seed:roles": "tsx scripts/seed-roles.ts",
     "test": "echo \"Error: no test specified\" && exit 1"

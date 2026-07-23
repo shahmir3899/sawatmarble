@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../lib/api'
 import type { ActivityEntry, DashboardData } from '../lib/types'
-import { formatMoney } from '../lib/format'
+import { formatMoney, formatDateTime } from '../lib/format'
 
 const ACTIVITY_LABELS: Record<ActivityEntry['type'], string> = {
   receipt: 'Invoice',
@@ -112,7 +112,7 @@ export function DashboardPage() {
               <span className="activity-type">{ACTIVITY_LABELS[entry.type]}</span>
               <span className="activity-label">{entry.label}</span>
               {entry.amount !== null && <span className="activity-amount">Rs {formatMoney(entry.amount)}</span>}
-              <span className="activity-date">{new Date(entry.createdAt).toLocaleString()}</span>
+              <span className="activity-date">{formatDateTime(entry.createdAt)}</span>
             </li>
           ))}
         </ul>

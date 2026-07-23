@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { Contact, Receipt } from '../lib/types'
-import { formatMoney } from '../lib/format'
+import { formatMoney, formatDate } from '../lib/format'
 
 type DraftItem = {
   key: string
@@ -154,7 +154,7 @@ export function ReceiptsPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${invoiceNo}.pdf`
+    a.download = `Invoice ${invoiceNo}.pdf`
     // Some browsers (Firefox in particular) ignore .click() on an <a> that
     // isn't attached to the DOM and fall back to just navigating/opening it.
     document.body.appendChild(a)
@@ -326,7 +326,7 @@ export function ReceiptsPage() {
                 <tr key={r.id}>
                   <td>{r.invoiceNo}</td>
                   <td>{customerName(r.customerId)}</td>
-                  <td>{new Date(r.date).toLocaleDateString()}</td>
+                  <td>{formatDate(r.date)}</td>
                   <td>{formatMoney(r.total)}</td>
                   <td>{formatMoney(r.advance)}</td>
                   <td>{formatMoney(r.balance)}</td>

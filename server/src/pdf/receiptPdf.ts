@@ -1,17 +1,14 @@
 import PDFDocument from "pdfkit";
 import type { Response } from "express";
-import { formatMoney } from "./format";
+import { formatMoney, formatDate } from "./format";
+import { drawLetterhead, drawFooter, ensureSpaceAboveFooter, drawTable } from "./layout";
 
 // Palette matches the physical paper invoice book (red/black), not the
 // gold app-chrome branding — per the confirmed decision that documents
-// need to be recognizable as "theirs", not a generic redesign. No vector
-// asset exists for the paper's script "Sm" mark, so the letterhead is
-// recreated in styled base-14 PDF fonts (no custom font embedded yet).
-const RED = "#c0392b";
+// need to be recognizable as "theirs", not a generic redesign.
 const BLACK = "#1a1a1a";
 const GRAY = "#555555";
 const LINE = "#cccccc";
-const ZEBRA = "#f7f7f7";
 
 const CURRENCY = "Rs.";
 
@@ -56,16 +53,7 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
   let y = doc.page.margins.top;
 
   // --- Letterhead ---
-  doc.fillColor(RED).font("Helvetica-BoldOblique").fontSize(24).text("Sm", left, y, { lineBreak: false });
-  doc.fillColor(BLACK).font("Helvetica-Bold").fontSize(24).text("SAWAT", left + 34, y, { lineBreak: false });
-  doc
-    .fillColor(BLACK)
-    .font("Helvetica")
-    .fontSize(13)
-    .text("MARBLE STONE & GRANITE", left + 118, y + 5, { lineBreak: false });
-  y += 32;
-  doc.strokeColor(LINE).moveTo(left, y).lineTo(left + pageWidth, y).stroke();
-  y += 14;
+  y = drawLetterhead(doc, left, y, pageWidth);
 
   // --- Info boxes: customer (left) + invoice meta (right) ---
   const boxTop = y;
@@ -89,7 +77,7 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
   doc.strokeColor("#999999").roundedRect(rightBoxX, boxTop, rightBoxWidth, boxHeight, 4).stroke();
   const metaLines: [string, string][] = [
     ["Invoice No:", `INV-${receipt.invoiceNo}`],
-    ["Date:", receipt.date.toLocaleDateString()],
+    ["Date:", formatDate(receipt.date)],
     // No deliveryDate field exists on Receipt yet — this line has always
     // been a static placeholder, never a real per-order date. Until that
     // field exists, "To be confirmed" is the honest state to print.
@@ -104,29 +92,11 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
   y = boxTop + boxHeight + 20;
 
   // --- Line item table ---
-  const colWidths = COLUMNS.map((c) => c.widthFrac * pageWidth);
-  const rowHeight = 22;
-  const tableTop = y;
-
-  doc.rect(left, tableTop, pageWidth, rowHeight).fill(RED);
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(9);
-  let x = left;
-  COLUMNS.forEach((col, i) => {
-    doc.text(col.label, x + 4, tableTop + 6, { width: colWidths[i]! - 8, lineBreak: false });
-    x += colWidths[i]!;
-  });
-
-  let rowY = tableTop + rowHeight;
-  doc.font("Helvetica").fontSize(9);
-  receipt.items.forEach((item, idx) => {
-    if (idx % 2 === 1) {
-      doc.rect(left, rowY, pageWidth, rowHeight).fill(ZEBRA);
-    }
-    x = left;
+  const rows = receipt.items.map((item, idx) => {
     // Older rows may still carry a stored qty of 0 from before pieces-count
     // was a required field — treat that the same as "1 piece" on paper.
     const qtyDisplay = Number(item.qty) > 0 ? item.qty : "1";
-    const values = [
+    return [
       String(idx + 1),
       item.description,
       item.size ?? "",
@@ -135,19 +105,14 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
       `${CURRENCY} ${formatMoney(item.ratePerSqft)}`,
       `${CURRENCY} ${formatMoney(item.amount)}`,
     ];
-    doc.fillColor(BLACK);
-    values.forEach((val, i) => {
-      doc.text(val, x + 4, rowY + 6, { width: colWidths[i]! - 8, lineBreak: false });
-      x += colWidths[i]!;
-    });
-    doc.strokeColor(LINE).rect(left, rowY, pageWidth, rowHeight).stroke();
-    rowY += rowHeight;
   });
-  doc.strokeColor("#999999").rect(left, tableTop, pageWidth, rowY - tableTop).stroke();
-
-  y = rowY + 20;
+  y = drawTable(doc, left, y, pageWidth, COLUMNS, rows) + 20;
 
   // --- Footer: terms (left) + ledger box (right) ---
+  // Reserve enough room for the terms heading + ledger box + bank block as
+  // a unit; if it won't fit, start a fresh page instead of letting pdfkit
+  // auto-paginate mid-block (which fragments it across many near-blank pages).
+  y = ensureSpaceAboveFooter(doc, y, 230);
   const footerTop = y;
   const termsWidth = pageWidth * 0.56;
   const ledgerWidth = pageWidth * 0.4;
@@ -223,17 +188,8 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
 
   y = Math.max(termsY, bankTop + bankBoxHeight) + 24;
 
-  // --- Contact band ---
-  const bandHeight = 46;
-  doc.rect(left, y, pageWidth, bandHeight).fill(RED);
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(8);
-  doc.text("Gangal West Service Road, Rawalpindi", left + 10, y + 6, { lineBreak: false });
-  doc.text("Zulfiqar Ali | 0311-5290097, 0304-9420334    Iftikhar Ali | 0316-5619196", left + 10, y + 20, {
-    lineBreak: false,
-  });
-  doc.text("sawatmarblestone4684@yahoo.com", left + 10, y + 34, { lineBreak: false });
-
-  y += bandHeight + 24;
+  // --- Signature lines ---
+  y = ensureSpaceAboveFooter(doc, y, 20);
   const sigWidth = pageWidth / 2;
   doc
     .fillColor(BLACK)
@@ -248,6 +204,9 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
       width: sigWidth,
       lineBreak: false,
     });
+
+  // --- Footer: separator line + contact band, pinned to the bottom of the page ---
+  drawFooter(doc, left, pageWidth);
 
   doc.end();
 }

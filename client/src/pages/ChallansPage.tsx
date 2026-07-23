@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { ChallanStatus, Contact, DeliveryChallan, Quotation } from '../lib/types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
-import { formatMoney } from '../lib/format'
+import { formatMoney, formatDate } from '../lib/format'
 
 type DraftItem = {
   key: string
@@ -192,7 +192,7 @@ export function ChallansPage({ canManage }: Props) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${challanNo}.pdf`
+    a.download = `Challan ${challanNo}.pdf`
     // Some browsers (Firefox in particular) ignore .click() on an <a> that
     // isn't attached to the DOM and fall back to just navigating/opening it.
     document.body.appendChild(a)
@@ -370,7 +370,7 @@ export function ChallansPage({ canManage }: Props) {
                 <tr key={c.id}>
                   <td>{c.challanNo}</td>
                   <td>{customerName(c.customerId)}</td>
-                  <td>{new Date(c.date).toLocaleDateString()}</td>
+                  <td>{formatDate(c.date)}</td>
                   <td>{c.vehicleNumber ?? ''}</td>
                   <td>{c.driverName ?? ''}</td>
                   <td>

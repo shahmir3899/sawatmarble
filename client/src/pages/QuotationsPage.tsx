@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../lib/api'
 import type { Contact, Quotation, QuotationStatus } from '../lib/types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
-import { formatMoney } from '../lib/format'
+import { formatMoney, formatDate } from '../lib/format'
 
 type DraftItem = {
   key: string
@@ -175,7 +175,7 @@ export function QuotationsPage({ canManage }: Props) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${quotationNo}.pdf`
+    a.download = `Quotation ${quotationNo}.pdf`
     // Some browsers (Firefox in particular) ignore .click() on an <a> that
     // isn't attached to the DOM and fall back to just navigating/opening it.
     document.body.appendChild(a)
@@ -336,7 +336,7 @@ export function QuotationsPage({ canManage }: Props) {
                 <tr key={q.id}>
                   <td>{q.quotationNo}</td>
                   <td>{customerName(q.customerId)}</td>
-                  <td>{new Date(q.date).toLocaleDateString()}</td>
+                  <td>{formatDate(q.date)}</td>
                   <td>
                     {canManage ? (
                       <select
