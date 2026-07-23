@@ -143,7 +143,7 @@ export function ReceiptsPage() {
   // Auth here is a Bearer token, not a cookie session, so a plain <a href>
   // can't carry it — fetch the PDF as a blob with the token attached, then
   // save it via a temporary <a download> link.
-  async function downloadPdf(receiptId: string, invoiceNo: string) {
+  async function downloadPdf(receiptId: string, invoiceNo: number) {
     const res = await apiFetch(`/receipts/${receiptId}/pdf`)
     if (!res.ok) {
       setError(`Failed to load PDF (HTTP ${res.status})`)
