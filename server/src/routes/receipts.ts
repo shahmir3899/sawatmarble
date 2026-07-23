@@ -138,7 +138,7 @@ router.post("/", requireAuth, requireRole("owner", "staff", "accountant"), async
           create: items.map((item, index) => ({
             description: String(item.description).trim(),
             size: item.size || null,
-            qty: Number(item.qty) || 0,
+            qty: Number(item.qty) || 1,
             sqft: Number(item.sqft) || 0,
             ratePerSqft: Number(item.ratePerSqft) || 0,
             amount: Number(item.amount) || 0,

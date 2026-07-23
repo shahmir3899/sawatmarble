@@ -7,6 +7,7 @@ const RED = "#c0392b";
 const BLACK = "#1a1a1a";
 const GRAY = "#555555";
 const LINE = "#cccccc";
+const ZEBRA = "#f7f7f7";
 
 export type ChallanForPdf = {
   challanNo: string;
@@ -28,7 +29,8 @@ export type ChallanForPdf = {
 };
 
 const COLUMNS = [
-  { label: "Description", widthFrac: 0.3 },
+  { label: "#", widthFrac: 0.05 },
+  { label: "Description", widthFrac: 0.25 },
   { label: "Size", widthFrac: 0.15 },
   { label: "Qty", widthFrac: 0.09 },
   { label: "Sq.ft", widthFrac: 0.12 },
@@ -113,9 +115,13 @@ export function streamChallanPdf(challan: ChallanForPdf, res: Response) {
 
   let rowY = tableTop + rowHeight;
   doc.font("Helvetica").fontSize(9);
-  for (const item of challan.items) {
+  challan.items.forEach((item, idx) => {
+    if (idx % 2 === 1) {
+      doc.rect(left, rowY, pageWidth, rowHeight).fill(ZEBRA);
+    }
     x = left;
-    const values = [item.description, item.size ?? "", item.qty, item.sqft, item.ratePerSqft, item.amount];
+    const qtyDisplay = Number(item.qty) > 0 ? item.qty : "1";
+    const values = [String(idx + 1), item.description, item.size ?? "", qtyDisplay, item.sqft, item.ratePerSqft, item.amount];
     doc.fillColor(BLACK);
     values.forEach((val, i) => {
       doc.text(val, x + 4, rowY + 6, { width: colWidths[i]! - 8, lineBreak: false });
@@ -123,7 +129,7 @@ export function streamChallanPdf(challan: ChallanForPdf, res: Response) {
     });
     doc.strokeColor(LINE).rect(left, rowY, pageWidth, rowHeight).stroke();
     rowY += rowHeight;
-  }
+  });
   doc.strokeColor("#999999").rect(left, tableTop, pageWidth, rowY - tableTop).stroke();
 
   y = rowY + 10;
@@ -137,6 +143,8 @@ export function streamChallanPdf(challan: ChallanForPdf, res: Response) {
   y += 26;
 
   // --- Terms ---
+  doc.fillColor(BLACK).font("Helvetica-Bold").fontSize(9).text("Terms & Conditions", left, y, { lineBreak: false });
+  y += 14;
   doc.fillColor(GRAY).font("Helvetica").fontSize(8);
   const terms = (challan.termsSnapshot ?? "").split("\n").filter(Boolean);
   let termsY = y;

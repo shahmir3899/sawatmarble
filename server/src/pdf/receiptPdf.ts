@@ -10,6 +10,9 @@ const RED = "#c0392b";
 const BLACK = "#1a1a1a";
 const GRAY = "#555555";
 const LINE = "#cccccc";
+const ZEBRA = "#f7f7f7";
+
+const CURRENCY = "Rs.";
 
 export type ReceiptForPdf = {
   invoiceNo: number;
@@ -32,7 +35,8 @@ export type ReceiptForPdf = {
 };
 
 const COLUMNS = [
-  { label: "Description", key: "description", widthFrac: 0.3 },
+  { label: "#", key: "no", widthFrac: 0.05 },
+  { label: "Description", key: "description", widthFrac: 0.25 },
   { label: "Size", key: "size", widthFrac: 0.15 },
   { label: "Qty", key: "qty", widthFrac: 0.09 },
   { label: "Sq.ft", key: "sqft", widthFrac: 0.12 },
@@ -83,9 +87,12 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
 
   doc.strokeColor("#999999").roundedRect(rightBoxX, boxTop, rightBoxWidth, boxHeight, 4).stroke();
   const metaLines: [string, string][] = [
-    ["Invoice No:", String(receipt.invoiceNo)],
+    ["Invoice No:", `INV-${receipt.invoiceNo}`],
     ["Date:", receipt.date.toLocaleDateString()],
-    ["Delivery:", "(Expected) ____________"],
+    // No deliveryDate field exists on Receipt yet — this line has always
+    // been a static placeholder, never a real per-order date. Until that
+    // field exists, "To be confirmed" is the honest state to print.
+    ["Delivery:", "To be confirmed"],
   ];
   metaLines.forEach(([label, value], i) => {
     const rowY = boxTop + 10 + i * 20;
@@ -110,9 +117,23 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
 
   let rowY = tableTop + rowHeight;
   doc.font("Helvetica").fontSize(9);
-  for (const item of receipt.items) {
+  receipt.items.forEach((item, idx) => {
+    if (idx % 2 === 1) {
+      doc.rect(left, rowY, pageWidth, rowHeight).fill(ZEBRA);
+    }
     x = left;
-    const values = [item.description, item.size ?? "", item.qty, item.sqft, item.ratePerSqft, item.amount];
+    // Older rows may still carry a stored qty of 0 from before pieces-count
+    // was a required field — treat that the same as "1 piece" on paper.
+    const qtyDisplay = Number(item.qty) > 0 ? item.qty : "1";
+    const values = [
+      String(idx + 1),
+      item.description,
+      item.size ?? "",
+      qtyDisplay,
+      item.sqft,
+      `${CURRENCY} ${item.ratePerSqft}`,
+      `${CURRENCY} ${item.amount}`,
+    ];
     doc.fillColor(BLACK);
     values.forEach((val, i) => {
       doc.text(val, x + 4, rowY + 6, { width: colWidths[i]! - 8, lineBreak: false });
@@ -120,7 +141,7 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
     });
     doc.strokeColor(LINE).rect(left, rowY, pageWidth, rowHeight).stroke();
     rowY += rowHeight;
-  }
+  });
   doc.strokeColor("#999999").rect(left, tableTop, pageWidth, rowY - tableTop).stroke();
 
   y = rowY + 20;
@@ -131,30 +152,34 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
   const ledgerWidth = pageWidth * 0.4;
   const ledgerX = left + pageWidth - ledgerWidth;
 
+  doc.fillColor(BLACK).font("Helvetica-Bold").fontSize(9).text("Terms & Conditions", left, footerTop, {
+    lineBreak: false,
+  });
   doc.fillColor(GRAY).font("Helvetica").fontSize(8);
   const terms = (receipt.termsSnapshot ?? "").split("\n").filter(Boolean);
-  let termsY = footerTop;
+  let termsY = footerTop + 14;
   for (const term of terms) {
     doc.text(`• ${term}`, left, termsY, { width: termsWidth });
     termsY += doc.heightOfString(`• ${term}`, { width: termsWidth }) + 3;
   }
 
   const ledgerRows: [string, string][] = [
-    ["Previous Balance", receipt.previousBalance],
-    ["Total", receipt.total],
-    ["Advance", receipt.advance],
-    ["Balance", receipt.balance],
+    ["Previous Balance", `${CURRENCY} ${receipt.previousBalance}`],
+    ["Total", `${CURRENCY} ${receipt.total}`],
+    ["Advance", `${CURRENCY} ${receipt.advance}`],
+    ["Balance", `${CURRENCY} ${receipt.balance}`],
   ];
   const ledgerRowHeight = 18;
-  doc.strokeColor("#999999").rect(ledgerX, footerTop, ledgerWidth, ledgerRowHeight * ledgerRows.length).stroke();
+  const ledgerBoxHeight = ledgerRowHeight * ledgerRows.length;
+  doc.strokeColor("#999999").rect(ledgerX, footerTop, ledgerWidth, ledgerBoxHeight).stroke();
   ledgerRows.forEach(([label, value], i) => {
     const rowTop = footerTop + i * ledgerRowHeight;
     doc.fillColor(BLACK).font("Helvetica-Bold").fontSize(9).text(label, ledgerX + 8, rowTop + 5, {
-      width: ledgerWidth * 0.55,
+      width: ledgerWidth * 0.5,
       lineBreak: false,
     });
-    doc.font("Helvetica").text(value, ledgerX + 8 + ledgerWidth * 0.55, rowTop + 5, {
-      width: ledgerWidth * 0.4,
+    doc.font("Helvetica").text(value, ledgerX + 8 + ledgerWidth * 0.5, rowTop + 5, {
+      width: ledgerWidth * 0.45,
       align: "right",
       lineBreak: false,
     });
@@ -167,7 +192,35 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
     }
   });
 
-  y = Math.max(termsY, footerTop + ledgerRowHeight * ledgerRows.length) + 24;
+  // --- Bank / Payment details — sits directly under the ledger box ---
+  const bankTop = footerTop + ledgerBoxHeight + 10;
+  const bankHeadingHeight = 18;
+  const bankRowHeight = 16;
+  const bankRows: [string, string][] = [
+    ["Bank Name", "____________________"],
+    ["Account Title", "____________________"],
+    ["Account No / IBAN", "____________________"],
+  ];
+  const bankBoxHeight = bankHeadingHeight + bankRowHeight * bankRows.length + 4;
+  doc.strokeColor("#999999").rect(ledgerX, bankTop, ledgerWidth, bankBoxHeight).stroke();
+  doc
+    .fillColor(BLACK)
+    .font("Helvetica-Bold")
+    .fontSize(8.5)
+    .text("Bank / Payment Details", ledgerX + 8, bankTop + 6, { lineBreak: false });
+  bankRows.forEach(([label, value], i) => {
+    const rowTop = bankTop + bankHeadingHeight + i * bankRowHeight;
+    doc.fillColor(BLACK).font("Helvetica-Bold").fontSize(8).text(label, ledgerX + 8, rowTop, {
+      width: ledgerWidth * 0.45,
+      lineBreak: false,
+    });
+    doc.font("Helvetica").fontSize(8).text(value, ledgerX + 8 + ledgerWidth * 0.45, rowTop, {
+      width: ledgerWidth * 0.47,
+      lineBreak: false,
+    });
+  });
+
+  y = Math.max(termsY, bankTop + bankBoxHeight) + 24;
 
   // --- Contact band ---
   const bandHeight = 46;
@@ -180,9 +233,20 @@ export function streamReceiptPdf(receipt: ReceiptForPdf, res: Response) {
   doc.text("sawatmarblestone4684@yahoo.com", left + 10, y + 34, { lineBreak: false });
 
   y += bandHeight + 24;
-  doc.fillColor(BLACK).font("Helvetica").fontSize(9).text("Signature: ______________________________", left, y, {
-    lineBreak: false,
-  });
+  const sigWidth = pageWidth / 2;
+  doc
+    .fillColor(BLACK)
+    .font("Helvetica")
+    .fontSize(9)
+    .text("Customer Signature: ________________________", left, y, { width: sigWidth, lineBreak: false });
+  doc
+    .fillColor(BLACK)
+    .font("Helvetica")
+    .fontSize(9)
+    .text("Authorized Signature: ________________________", left + sigWidth, y, {
+      width: sigWidth,
+      lineBreak: false,
+    });
 
   doc.end();
 }

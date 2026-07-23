@@ -20,7 +20,7 @@ function emptyItem(): DraftItem {
     description: '',
     length: '',
     width: '',
-    qty: '',
+    qty: '1',
     sqft: '',
     ratePerSqft: '',
     amount: '',
@@ -68,7 +68,9 @@ export function QuotationsPage({ canManage }: Props) {
       if ('length' in patch || 'width' in patch || 'qty' in patch) {
         const l = Number(merged.length) || 0
         const w = Number(merged.width) || 0
-        const q = Number(merged.qty) || 0
+        // Qty is "pieces at this size" — default to 1 when left blank/0
+        // rather than zeroing out the sqft calc for a single-piece sale.
+        const q = Number(merged.qty) || 1
         merged.sqft = (l * w * q).toFixed(2)
       }
       if ('length' in patch || 'width' in patch || 'qty' in patch || 'sqft' in patch || 'ratePerSqft' in patch) {
